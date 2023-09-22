@@ -1,4 +1,4 @@
-import Observable from './framework/observable.js';
+import Observable from '../framework/observable.js';
 export default class PointsModel extends Observable {
   #servise = null;
   #points = null;

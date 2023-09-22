@@ -3,7 +3,6 @@ import SortView from '../view/sort-view';
 import ListView from '../view/list-view';
 import NoPointsView from '../view/no-points-view';
 import PointPresenter from './point-presenter';
-import { updateItem } from '../utils/common';
 import { SortType, enabledSortType } from '../const';
 import { sortPointsByTime, sortPointsByPrice } from '../utils/common';
 
@@ -18,26 +17,32 @@ export default class PointsPresenter {
   #noPointsComponent = new NoPointsView();
 
   #pointPresenters = new Map();
-  #sourcedPoints = [];
-  #points = [];
   #currentSortType = SortType.DEFAULT;
 
   constructor({pointsModel, offersModel, destinationsModel}) {
     this.#pointsModel = pointsModel;
     this.#offersModel = offersModel;
     this.#destinationsModel = destinationsModel;
-
-    this.#points = [...this.#pointsModel.points];
-    this.#sourcedPoints = [...this.#pointsModel.points];
   }
 
   init() {
     this.#renderBoard();
   }
 
+  get points() {
+
+    switch (this.#currentSortType) {
+      case SortType.TIME:
+        return [...this.#pointsModel.points].sort(sortPointsByTime);
+      case SortType.PRICE:
+        return [...this.#pointsModel.points].sort(sortPointsByPrice);
+    }
+
+    return this.#pointsModel.points;
+  }
+
   #pointChangeHandler = (updatedPoint) => {
-    this.#points = updateItem(this.#points, updatedPoint);
-    this.#sourcedPoints = updateItem(this.#sourcedPoints, updatedPoint);
+    // Здесь будем вызывать обновление модели
     this.#pointPresenters.get(updatedPoint.id).init(updatedPoint);
   };
 
@@ -50,28 +55,10 @@ export default class PointsPresenter {
       return;
     }
 
-    this.#sortPoints(sortType);
-    this.#clearPointsList();
-    this.#renderPoints();
-  };
-
-  #sortPoints(sortType) {
-
-    switch (sortType) {
-      case SortType.TIME:
-        this.#points.sort(sortPointsByTime);
-        break;
-      case SortType.PRICE:
-        this.#points.sort(sortPointsByPrice);
-        break;
-      case SortType.DEFAULT:
-        this.#points = [...this.#sourcedPoints];
-        break;
-    }
-
     this.#currentSortType = sortType;
-
-  }
+    this.#clearPointsList();
+    this.#renderPointsList();
+  };
 
   #renderSort() {
     const sortItems = this.#generateSort();
@@ -94,8 +81,8 @@ export default class PointsPresenter {
     );
   }
 
-  #renderPoints() {
-    this.#points.forEach((point) => {
+  #renderPoints(points) {
+    points.forEach((point) => {
       this.#renderPoint(point);
     });
   }
@@ -122,16 +109,19 @@ export default class PointsPresenter {
     this.#pointPresenters.clear();
   }
 
+  #renderPointsList() {
+    render(this.#pointsListComponent, tripEvents);
+    this.#renderPoints(this.points);
+  }
+
   #renderBoard() {
-    if (this.#points.length === 0) {
+    if (this.points.length === 0) {
       this.#renderNoPoints();
       return;
     }
 
-    render(this.#pointsListComponent, tripEvents);
-
     this.#renderSort();
-    this.#renderPoints();
+    this.#renderPointsList();
   }
 
   #renderNoPoints() {

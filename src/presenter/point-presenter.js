@@ -76,10 +76,6 @@ export default class PointPresenter {
 
   }
 
-  get points() {
-    return this.#pointsModel.points;
-  }
-
   #getTypesOfAllPoints() {
     this.#pointsModel.points.forEach((points) => this.#allTypesPoints.add(points.type));
     return this.#allTypesPoints;
